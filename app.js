@@ -1,11 +1,18 @@
+// app.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const config = require('./config');
+const mongoose = require('mongoose');
+mongoose.set('debug', true);
 
 const turtlesRouter = require('./routes/turtles');
 
 const app = express();
+
+mongoose.connect(config.mongoURI)
+    .then(() => console.log('Successful MongoDB connection'))
+    .catch(err => console.error('Error connecting to MongoDB:', err));
 
 app.use(cors());
 
