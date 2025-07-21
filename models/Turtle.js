@@ -1,5 +1,6 @@
 // models/Turtle.js
 const mongoose = require('mongoose');
+const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 // Sub-schema for geographical coordinates
 const geoSchema = new mongoose.Schema({
@@ -24,6 +25,7 @@ const affiliationSchema = new mongoose.Schema({
 // Main Turtle Schema
 const turtleSchema = new mongoose.Schema({
   // Basic Identification
+  turtleId: { type: Number, unique: true },
   name: {
     type: String,
     required: true,
@@ -76,6 +78,9 @@ const turtleSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+
+// Apply the auto-increment plugin to the turtleSchema
+turtleSchema.plugin(AutoIncrement, { inc_field: 'turtleId' });
 
 // Middleware to update 'updatedAt' before saving
 turtleSchema.pre('save', function(next) {
