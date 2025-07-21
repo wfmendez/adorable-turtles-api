@@ -1,49 +1,39 @@
 const express = require('express');
 const router = express.Router();
-const { v4: uuidv4 } = require('uuid');
+const Turtle = require('../models/Turtle');
 
-let adorableTurtles = [
-    {
-        "id": "1",
-        "name": "Shelly",
-        "species": "Green Sea Turtle",
-        "age": 15,
-        "habitat": "Pacific Ocean",
-        "description": "Shelly is a very friendly green sea turtle, known for her vibrant shell color.",
-        "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/da/Green_sea_turtle_feeding.jpg",
-        "threat_status": "Endangered"
-    },
-    {
-        "id": "2",
-        "name": "Crush",
-        "species": "Loggerhead Sea Turtle",
-        "age": 50,
-        "habitat": "Atlantic Ocean",
-        "description": "Crush is a wise and calm loggerhead sea turtle, always ready to give good advice.",
-        "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Loggerhead_sea_turtle_%28Caretta_caretta%29.jpg",
-        "threat_status": "Vulnerable"
-    }
-];
-
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     console.log('GET /turtles requested');
-    res.json(adorableTurtles);
+    try {
+        const turtles = await Turtle.find();
+        res.json(turtles);
+    } catch (err) {
+        console.error('Error fetching turtles:', err);
+        res.status(500).json({ message: 'Internal server error while fetching turtles.' });
+    }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     const requestedId = req.params.id;
     console.log(`GET /turtles/${requestedId} requested`);
-    const turtle = adorableTurtles.find(t => t.id === requestedId);
+    try {
+        const turtle = await Turtle.findById(requestedId);
 
-    if (turtle) {
-        res.json(turtle);
-    } else {
-        
-        res.status(404).json({ message: 'Turtle not found' });
+        if (turtle) {
+            res.json(turtle);
+        } else {
+            res.status(404).json({ message: 'Turtle not found' });
+        }
+    } catch (err) {
+        console.error(`Error fetching turtle ${requestedId}:`, err);
+        if (err.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid ID format.' });
+        }
+        res.status(500).json({ message: 'Internal server error while fetching the turtle.' });
     }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     console.log('POST /turtles requested');
     const newTurtleData = req.body;
 
@@ -51,60 +41,95 @@ router.post('/', (req, res) => {
         return res.status(400).json({ message: 'Name and species are required fields.' });
     }
 
-    const newTurtle = {
-        id: uuidv4(), 
-        ...newTurtleData 
-    };
-
-    adorableTurtles.push(newTurtle); 
-    res.status(201).json(newTurtle); 
+    try {
+        const newTurtle = new Turtle(newTurtleData);
+        const savedTurtle = await newTurtle.save();
+        res.status(201).json(savedTurtle);
+    } catch (err) {
+        console.error('Error creating turtle:', err);
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ message: err.message });
+        }
+        res.status(500).json({ message: 'Internal server error while creating turtle.' });
+    }
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     const idToUpdate = req.params.id;
     const updatedData = req.body;
     console.log(`PUT /turtles/${idToUpdate} requested`);
 
-    const turtleIndex = adorableTurtles.findIndex(t => t.id === idToUpdate);
+    try {
+        const updatedTurtle = await Turtle.findByIdAndUpdate(
+            idToUpdate,
+            updatedData,
+            { new: true, runValidators: true }
+        );
 
-    if (turtleIndex !== -1) {
-        const updatedTurtle = { id: idToUpdate, ...updatedData };
-        adorableTurtles[turtleIndex] = updatedTurtle;
-        res.json(updatedTurtle);
-    } else {
-        res.status(404).json({ message: 'Turtle not found for update.' });
+        if (updatedTurtle) {
+            res.json(updatedTurtle);
+        } else {
+            res.status(404).json({ message: 'Turtle not found for update.' });
+        }
+    } catch (err) {
+        console.error(`Error updating turtle ${idToUpdate}:`, err);
+        if (err.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid ID format.' });
+        }
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ message: err.message });
+        }
+        res.status(500).json({ message: 'Internal server error while updating the turtle.' });
     }
 });
 
-router.patch('/:id', (req, res) => {
+router.patch('/:id', async (req, res) => {
     const idToUpdate = req.params.id;
     const partialData = req.body;
     console.log(`PATCH /turtles/${idToUpdate} requested`);
 
-    const turtleIndex = adorableTurtles.findIndex(t => t.id === idToUpdate);
+    try {
+        const updatedTurtle = await Turtle.findByIdAndUpdate(
+            idToUpdate,
+            { $set: partialData },
+            { new: true, runValidators: true }
+        );
 
-    if (turtleIndex !== -1) {
-        adorableTurtles[turtleIndex] = {
-            ...adorableTurtles[turtleIndex],
-            ...partialData 
-        };
-        res.json(adorableTurtles[turtleIndex]);
-    } else {
-        res.status(404).json({ message: 'Turtle not found for partial update.' });
+        if (updatedTurtle) {
+            res.json(updatedTurtle);
+        } else {
+            res.status(404).json({ message: 'Turtle not found for partial update.' });
+        }
+    } catch (err) {
+        console.error(`Error partially updating turtle ${idToUpdate}:`, err);
+        if (err.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid ID format.' });
+        }
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ message: err.message });
+        }
+        res.status(500).json({ message: 'Internal server error while partially updating the turtle.' });
     }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     const idToDelete = req.params.id;
     console.log(`DELETE /turtles/${idToDelete} requested`);
 
-    const initialLength = adorableTurtles.length;
-    adorableTurtles = adorableTurtles.filter(t => t.id !== idToDelete);
+    try {
+        const deletedTurtle = await Turtle.findByIdAndDelete(idToDelete);
 
-    if (adorableTurtles.length < initialLength) {
-        res.status(204).send();
-    } else {
-        res.status(404).json({ message: 'Turtle not found for deletion.' });
+        if (deletedTurtle) {
+            res.status(204).send();
+        } else {
+            res.status(404).json({ message: 'Turtle not found for deletion.' });
+        }
+    } catch (err) {
+        console.error(`Error deleting turtle ${idToDelete}:`, err);
+        if (err.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid ID format.' });
+        }
+        res.status(500).json({ message: 'Internal server error while deleting the turtle.' });
     }
 });
 
