@@ -1,0 +1,22 @@
+# Node modules
+node_modules/
+
+# Configuration files with credentials
+config/*.js
+# Or if you only want to ignore the specific config file
+# config/index.js
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.eslintcache
+.prettierrc
+
+# Local environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
