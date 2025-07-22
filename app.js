@@ -21,7 +21,20 @@ app.use(bodyParser.json());
 app.use('/turtles', turtlesRouter);
 
 app.get('/', (req, res) => {
-    res.send('Welcome to Adorable Turtles World');
+    res.json({
+        message: 'Welcome to Adorable Turtles World API!',
+        endpoints: {
+            all_turtles: '/turtles',
+            single_turtle_by_id: '/turtles/:id',
+            filter_by_name: '/turtles?name={partial_name}',
+            filter_by_species: '/turtles?species={species_name}',
+            filter_by_realm: '/turtles?realm={realm_name}',
+            filter_by_age_range: '/turtles?ageYears[gte]={min_age}&ageYears[lte]={max_age}',
+            filter_by_personality_trait: '/turtles?personalityTraits={trait1},{trait2}',
+
+        },
+        documentation: 'https://github.com/wfmendez/adorable-turtles-api/tree/main',
+    });
 });
 
 const PORT = process.env.PORT || config.port;
