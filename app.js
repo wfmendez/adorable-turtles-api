@@ -24,7 +24,9 @@ app.get('/', (req, res) => {
     res.send('Welcome to Adorable Turtles World');
 });
 
-app.listen(config.port, () => {
-    console.log(`Adorable Turtles Server in http://localhost:${config.port}`);
-    console.log(`Adorable Turtles List: http://localhost:${config.port}/turtles`);
+const PORT = process.env.PORT || config.port;
+
+app.listen(PORT, () => {
+    console.log(`Adorable Turtles Server running on port ${PORT}`);
+    console.log(`Adorable Turtles List: http://localhost:${PORT}/turtles (Local Development URL)`);
 });
